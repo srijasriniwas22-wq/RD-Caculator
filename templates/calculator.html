@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RD Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="calc-body">
+    <div class="bg-shapes no-print">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+    </div>
+
+    <header class="navbar no-print fade-in-down">
+        <div class="container nav-content">
+            <a href="{{ url_for('calculator') }}" class="logo">
+                <span class="logo-icon">₹</span>
+                <span class="logo-text">BlueVault <strong>RD</strong></span>
+            </a>
+            <nav>
+                <button onclick="window.print()" class="btn-print-nav">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print
+                </button>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="print-only-header">
+        <h1>Recurring Deposit Statement</h1>
+        <p><span id="print-date">{{ generated_date }}</span></p>
+        <hr>
+    </div>
+
+    <main class="container calc-container">
+        <div class="calc-grid">
+            <!-- Left Panel: Controls -->
+            <section class="panel controls-panel fade-in-left">
+                <h2 class="panel-title">RD Calculator</h2>
+
+                <!-- Monthly Deposit Amount (Initialized to 0) -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <label for="deposit-amount">Monthly Amount (₹)</label>
+                        <div class="input-wrapper">
+                            <span class="currency-prefix">₹</span>
+                            <input type="number" id="deposit-amount" value="0" min="0" max="1000000" step="100">
+                        </div>
+                    </div>
+                    <input type="range" id="deposit-slider" min="0" max="100000" step="500" value="0" class="styled-slider">
+                    <div class="range-labels">
+                        <span>₹0</span>
+                        <span>₹50,000</span>
+                        <span>₹1,00,000</span>
+                    </div>
+                </div>
+
+                <!-- Ordered Tenure Selection (1 to 120 Months) -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <label for="tenure-months">Months (1 - 120)</label>
+                        <select id="tenure-months" class="styled-select">
+                            {% for m in months_list %}
+                                <option value="{{ m }}" {% if m == 1 %}selected{% endif %}>
+                                    {{ m }} {{ 'Month' if m == 1 else 'Months' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Maturity Interest Rate (7% to 20%) -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <label for="interest-rate">Maturity Rate (%)</label>
+                        <div class="input-wrapper rate-wrapper">
+                            <input type="number" id="interest-rate" value="7.0" min="7" max="20" step="0.1">
+                            <span class="percent-suffix">%</span>
+                        </div>
+                    </div>
+                    <input type="range" id="rate-slider" min="7" max="20" step="0.1" value="7.0" class="styled-slider">
+                    <div class="range-labels">
+                        <span>7%</span>
+                        <span>13.5%</span>
+                        <span>20%</span>
+                    </div>
+                    <span class="error-msg" id="rate-error"></span>
+                </div>
+
+                <!-- Compounding Frequency -->
+                <div class="control-group">
+                    <div class="control-header">
+                        <label for="compounding">Compounding</label>
+                        <select id="compounding" class="styled-select">
+                            <option value="4" selected>Quarterly</option>
+                            <option value="12">Monthly</option>
+                            <option value="2">Half-Yearly</option>
+                            <option value="1">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons no-print">
+                    <button type="button" id="reset-btn" class="btn-secondary">Reset (0)</button>
+                    <button type="button" onclick="window.print()" class="btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Print
+                    </button>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results (Initialized to 0) -->
+            <section class="panel results-panel fade-in-right">
+                <h2 class="panel-title">Summary</h2>
+
+                <div class="maturity-highlight-box">
+                    <span class="m-label">Maturity Amount</span>
+                    <div class="m-value" id="maturity-value">₹ 0</div>
+                    <span class="m-sub" id="summary-subtitle">7.0% • 1 Month</span>
+                </div>
+
+                <div class="stats-cards">
+                    <div class="stat-box">
+                        <span class="stat-dot principal-dot"></span>
+                        <div>
+                            <span class="stat-label">Principal</span>
+                            <strong class="stat-num" id="total-deposited">₹ 0</strong>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-dot interest-dot"></span>
+                        <div>
+                            <span class="stat-label">Interest</span>
+                            <strong class="stat-num highlight-blue" id="total-interest">₹ 0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visual-chart-container">
+                    <div class="donut-wrapper">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg"
+                                d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path class="circle-progress" id="donut-interest-arc"
+                                stroke-dasharray="0, 100"
+                                d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                        </svg>
+                        <div class="donut-center">
+                            <span id="interest-percent-label">0%</span>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="swatch principal-swatch"></span>
+                            <span>Principal (<strong id="principal-ratio">0%</strong>)</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="swatch interest-swatch"></span>
+                            <span>Interest (<strong id="interest-ratio">0%</strong>)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Schedule Table -->
+        <section class="panel schedule-panel fade-in-up">
+            <div class="schedule-header">
+                <h2 class="panel-title">Schedule</h2>
+                <button type="button" id="toggle-schedule-btn" class="btn-outline no-print">Hide</button>
+            </div>
+            <div class="table-responsive" id="schedule-table-container">
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Deposit</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schedule-tbody">
+                        {% for row in data.schedule %}
+                        <tr>
+                            <td><strong>{{ row.month }}</strong></td>
+                            <td>₹ {{ "{:,}".format(row.monthly_deposit) }}</td>
+                            <td>₹ {{ "{:,}".format(row.cumulative_principal) }}</td>
+                            <td class="highlight-blue">+ ₹ {{ "{:,}".format(row.interest_accrued) }}</td>
+                            <td><strong>₹ {{ "{:,}".format(row.closing_balance) }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

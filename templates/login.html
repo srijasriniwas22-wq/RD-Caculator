@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <main class="login-wrapper">
+        <div class="login-card fade-in-up">
+            <div class="login-logo">
+                <span class="logo-icon">₹</span>
+                <span class="logo-text">BlueVault <strong>RD</strong></span>
+            </div>
+
+            <form method="POST" action="{{ url_for('login') }}" class="login-form">
+                <div class="form-field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn-primary login-btn pulse-anim">Login</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
